@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ImageBackground, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Link, router } from 'expo-router';
-import { supabase } from 'lib/supabase';
+import { supabase } from '../lib/supabase';
+
 
 export default function RegisterScreen() {
   const [nome, setNome] = useState('');

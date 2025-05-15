@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ImageBackground, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Image, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface Ocorrencia {
   created_at: string;  // Usando created_at como identificador único
@@ -12,8 +12,9 @@ interface Ocorrencia {
   foto_url?: string;
   latitude?: number;
   longitude?: number;
-  vereador_id?: string;
+  user_id?: string;  // ID do usuário que criou a ocorrência
   descricao?: string;
+  vereador_nome?: string;  // Mantido do código original
 }
 
 export default function VerOcorrenciasScreen() {
@@ -23,17 +24,53 @@ export default function VerOcorrenciasScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOcorrencia, setSelectedOcorrencia] = useState<Ocorrencia | null>(null);
   const [detalhesLoading, setDetalhesLoading] = useState(false);
+  const [usuarioAtual, setUsuarioAtual] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOcorrencias();
+    // Buscar usuário atual assim que o componente montar
+    obterUsuarioAtual();
   }, []);
 
   useEffect(() => {
+    // Buscar ocorrências somente quando tivermos o ID do usuário
+    if (usuarioAtual) {
+      fetchOcorrencias(usuarioAtual);
+    }
+  }, [usuarioAtual]);
+
+  // Função para obter o usuário logado atualmente
+  async function obterUsuarioAtual() {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      if (data && data.user) {
+        console.log('Usuário atual ID:', data.user.id);
+        setUsuarioAtual(data.user.id);
+      } else {
+        console.log('Usuário não autenticado');
+        setError('Usuário não está autenticado');
+      }
+    } catch (error) {
+      console.error('Erro ao obter usuário atual:', error);
+      setError('Falha ao carregar informações do usuário');
+    }
+  }
+
+  useEffect(() => {
+    if (!usuarioAtual) return;
+    
     const subscription = supabase
       .channel('ocorrencias-channel')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'ocorrencias' },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'ocorrencias',
+          filter: `user_id=eq.${usuarioAtual}` // Filtrar apenas eventos do usuário atual
+        },
         (payload) => {
           console.log('Recebeu evento:', payload.eventType, payload.new, payload.old);
           
@@ -74,7 +111,6 @@ export default function VerOcorrenciasScreen() {
               }
             }
           }
-          
         }
       )
       .subscribe();
@@ -82,19 +118,35 @@ export default function VerOcorrenciasScreen() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [selectedOcorrencia]);
+  }, [selectedOcorrencia, usuarioAtual]);
 
-  async function fetchOcorrencias() {
+  async function fetchOcorrencias(userId: string) {
     try {
       setLoading(true);
+      console.log('Buscando ocorrências para o usuário:', userId);
       const { data, error } = await supabase
         .from('ocorrencias')
         .select('created_at, status, titulo')
+        .eq('user_id', userId) // Filtra apenas ocorrências do usuário logado
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      console.log('Ocorrências encontradas:', data?.length || 0);
       setOcorrencias(data || []);
+      
+      // Verificamos se não há ocorrências e fazemos uma consulta adicional para depuração
+      if (!data || data.length === 0) {
+        console.log('Verificando se existem ocorrências sem filtro...');
+        const { data: allData, error: allError } = await supabase
+          .from('ocorrencias')
+          .select('created_at, user_id, titulo')
+          .limit(5);
+          
+        if (!allError && allData) {
+          console.log('Amostra de ocorrências disponíveis:', allData);
+        }
+      }
     } catch (error) {
       console.error('Error fetching occurrences:', error);
       setError('Falha ao carregar ocorrências. Tente novamente mais tarde.');
@@ -185,7 +237,7 @@ export default function VerOcorrenciasScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar style="auto" />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Ocorrências enviadas</Text>
+          <Text style={styles.headerTitle}>Minhas Ocorrências</Text>
         </View>
         
         <View style={styles.content}>
@@ -252,8 +304,6 @@ export default function VerOcorrenciasScreen() {
                   <Text style={styles.detalhesLabel}>Data de Criação:</Text>
                   <Text style={styles.detalhesValue}>{formatarData(selectedOcorrencia.created_at)}</Text>                
                   
-                  
-                                                
                   <Text style={styles.detalhesLabel}>Foto:</Text>
                   {selectedOcorrencia.foto_url ? (
                     <Image 
@@ -264,6 +314,10 @@ export default function VerOcorrenciasScreen() {
                   ) : (
                     <Text style={styles.detalhesValue}>Nenhuma foto disponível</Text>
                   )}
+
+                  <Text style={styles.detalhesLabel}>Réplica do vereador:</Text>
+                  <Text style={styles.detalhesValue}>{selectedOcorrencia.replica || 'Sem descrição'}</Text>
+
                 </ScrollView>
               )}
             </View>
@@ -363,7 +417,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: windowWidth * 0.9,
-    maxHeight: '90%',
+    maxHeight: '100%',
     backgroundColor: 'white',
     borderRadius: 10,
     elevation: 5,

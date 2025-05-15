@@ -1,6 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight } from 'expo-symbols';
-import React from 'react';
+import { SymbolWeight } from '@expo/vector-icons';import React from 'react';
 import { OpaqueColorValue, StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 // Mapeamento de SF Symbols (iOS) para Material Icons (Android/Web)

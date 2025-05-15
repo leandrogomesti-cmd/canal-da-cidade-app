@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 
 export default function HomeScreen() {
-  // Função atualizada para redirecionar para a página vereadores
   const navegarParaVereadores = () => {
     router.push("/vereadores");
   };
@@ -60,9 +59,14 @@ export default function HomeScreen() {
               <Text style={styles.buttonText}>Marketplace da Cidade</Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Criado por Zion Apps</Text>
+
+          {/* Novo logo da Zion no rodapé */}
+          <View style={styles.zionLogoContainer}>
+            <Image
+              source={require('@/assets/images/zion_logo.png')}
+              style={styles.zionLogo}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -78,7 +82,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // Semi-transparente para melhor visibilidade do conteúdo
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   content: {
     flex: 1,
@@ -118,17 +122,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  footer: {
-    width: '100%',
-    backgroundColor: '#0D2C54',
-    padding: 10,
+  zionLogoContainer: {
     alignItems: 'center',
-    marginTop: 20,
     marginBottom: 10,
-    
   },
-  footerText: {
-    color: '#fff',
-    fontSize: 14,
+  zionLogo: {
+    width: 320,
+    height: 80,
   },
 });

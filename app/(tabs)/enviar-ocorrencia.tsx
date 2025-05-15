@@ -318,6 +318,7 @@ export default function EnviarOcorrenciaScreen() {
         status: 'Enviado',
         vereador_id: vereadorId, // Apenas o ID do vereador
         vereador_nome: vereadorNome,
+        user_id: userId,
       };
 
       // Adicionar coordenadas geográficas se disponíveis
@@ -682,7 +683,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    // Removido maxHeight para permitir que o container cresça conforme necessário
+    maxHeight: 800,
   },
   dropdownHeader: {
     flexDirection: 'row',

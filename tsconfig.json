@@ -1,11 +1,14 @@
-{
- "extends": "expo/tsconfig.base",
+{ 
+ "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
-    }
+    "@/*": ["src/*"]
+    },
+    "types": []
+    // To avoid errors about missing type definitions, explicitly set "types" to an empty array.
+    // This disables automatic inclusion of all @types packages, including 'jsdom', 'node', and 'ws'.
   },
   "include": [
     "**/*.ts",
