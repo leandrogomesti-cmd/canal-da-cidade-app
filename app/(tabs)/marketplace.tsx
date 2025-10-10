@@ -360,7 +360,7 @@ export default function MarketplaceScreen() {
     
     try {
       // Usar o mapeamento de imagens para buscar a imagem correta
-      const fotoSource = imagensMap[fotoNome] || null;
+      const fotoSource = imagensMap[fotoNome as keyof typeof imagensMap] || null;
       
       return (
         <View style={styles.galeriaContainer}>
@@ -396,8 +396,7 @@ export default function MarketplaceScreen() {
         </View>
       );
     }
-  };
-  
+  };  
   const renderDestaqueItem = ({ item }: { item: Comercio }) => (
     <TouchableOpacity 
       key={item.id} 
@@ -437,13 +436,13 @@ export default function MarketplaceScreen() {
 
   return (
     <ImageBackground 
-      source={require('@/assets/images/salto.png')}
+      source={require('@/assets/images/mirante.png')}
       style={styles.backgroundImage}
     >
       <SafeAreaView style={styles.container}>
         <StatusBar style="auto" />
         <View style={styles.content}>
-          <Text style={styles.title}>MARKETPLACE</Text>
+          <Text style={styles.title}>Marketplace de Mirante do Paranapanema</Text>
           <Text style={styles.subtitle}>
             Aqui você encontra tudo o que sua cidade tem a oferecer.
           </Text>
@@ -603,7 +602,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
   content: {
     flex: 1,
@@ -615,6 +614,7 @@ const styles = StyleSheet.create({
     color: '#001F54',
     textAlign: 'center',
     marginVertical: 10,
+    marginTop: 30,
   },
   subtitle: {
     fontSize: 16,

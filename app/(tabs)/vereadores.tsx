@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Image, ImageBackground, TouchableOpacity } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -11,17 +11,15 @@ interface Vereador {
 
 export default function VereadoresScreen() {
   const vereadores: Vereador[] = [
-    { id: '1', nome: 'Almir de Melo', imagemUrl: require('../../assets/images/vereadores/almir.jpg') },
-    { id: '2', nome: 'Antonio Moreira', imagemUrl: require('../../assets/images/vereadores/antonio.jpg') },
-    { id: '3', nome: 'Arildo Guadagnini', imagemUrl: require('../../assets/images/vereadores/arildo.jpg') },
-    { id: '4', nome: 'Clayton Aparecido', imagemUrl: require('../../assets/images/vereadores/clayton.jpg') },
-    { id: '5', nome: 'Edemilson Pereira', imagemUrl: require('../../assets/images/vereadores/edemilson.jpg') },
-    { id: '6', nome: 'Edival Pereira', imagemUrl: require('../../assets/images/vereadores/edival.jpg') },
-    { id: '7', nome: 'Graziela Costa', imagemUrl: require('../../assets/images/vereadores/graziela.jpg') },
-    { id: '8', nome: 'Henrique Balseiros', imagemUrl: require('../../assets/images/vereadores/henrique.jpg') },
-    { id: '9', nome: 'Luzia de Fátima', imagemUrl: require('../../assets/images/vereadores/luzia.jpg') },
-    { id: '10', nome: 'Michel Oliveira', imagemUrl: require('../../assets/images/vereadores/michel.jpg') },
-    { id: '11', nome: 'Rogério dos Santos', imagemUrl: require('../../assets/images/vereadores/rogerio.jpg') },
+    { id: 'm1', nome: 'Almir do Assentamento', imagemUrl: require('../../assets/images/vereadores/ALMIR DO ASSENTAMENTO.png') },
+    { id: 'm2', nome: 'Angela do Bandeirantes', imagemUrl: require('../../assets/images/vereadores/ANGELA DO BANDEIRANTES.png') },
+    { id: 'm3', nome: 'Cacau Motorista', imagemUrl: require('../../assets/images/vereadores/CACAU MOTORISTA.png') },
+    { id: 'm4', nome: 'Climério', imagemUrl: require('../../assets/images/vereadores/CLIMERIO.png') },
+    { id: 'm5', nome: 'Paulinho do Cuiabá', imagemUrl: require('../../assets/images/vereadores/PAULINHO DO CUIABA.png') },
+    { id: 'm6', nome: 'Ramiro Junior', imagemUrl: require('../../assets/images/vereadores/RAMIRO JUNIOR.png') },
+    { id: 'm7', nome: 'Sandrinha Jamil', imagemUrl: require('../../assets/images/vereadores/SANDRINHA JAMIL.png') },
+    { id: 'm8', nome: 'Vinicíus Donato', imagemUrl: require('../../assets/images/vereadores/VINICIUS PROFESSOR DONATO.png') },
+    { id: 'm9', nome: 'Zé Cotó', imagemUrl: require('../../assets/images/vereadores/ZE COTO.png') },
   ];
 
   const navegarParaEnviarOcorrencia = (vereador: Vereador) => {
@@ -35,48 +33,59 @@ export default function VereadoresScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ title: 'Escolher Vereador' }} />
-      <StatusBar style="auto" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Para quem gostaria de enviar?</Text>
-        <Text style={styles.headerSubtitle}>Escolha o vereador para enviar a ocorrência.</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.vereadoresContainer}>
-          {vereadores.map((vereador) => (
-            <TouchableOpacity
-              key={vereador.id}
-              style={styles.vereadorCard}
-              onPress={() => navegarParaEnviarOcorrencia(vereador)}
-            >
-              <Image
-                source={vereador.imagemUrl}
-                style={styles.vereadorImagem}
-                resizeMode="cover"
-              />
-              <Text style={styles.vereadorNome}>{vereador.nome}</Text>
-            </TouchableOpacity>
-          ))}
+    <ImageBackground
+      source={require('../../assets/images/mirante.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Escolher Vereador' }} />
+        <StatusBar style="auto" />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Para quem gostaria de enviar?</Text>
+          <Text style={styles.headerSubtitle}>Escolha o vereador para enviar a ocorrência.</Text>
         </View>
-      </ScrollView>
 
-      <TouchableOpacity style={styles.voltarButton} onPress={() => router.back()}>
-        <Text style={styles.voltarButtonText}>Voltar</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        <ScrollView contentContainerStyle={styles.scrollView}>
+          <View style={styles.vereadoresContainer}>
+            {vereadores.map((vereador) => (
+              <TouchableOpacity
+                key={vereador.id}
+                style={styles.vereadorCard}
+                onPress={() => navegarParaEnviarOcorrencia(vereador)}
+              >
+                <Image
+                  source={vereador.imagemUrl}
+                  style={styles.vereadorImagem}
+                  resizeMode="cover"
+                />
+                <Text style={styles.vereadorNome}>{vereador.nome}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity style={styles.voltarButton} onPress={() => router.back()}>
+          <Text style={styles.voltarButtonText}>Voltar</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor:  'rgba(255, 255, 255, 0.45)', // Semi-transparente para melhor visibilidade do conteúdo
   },
   header: {
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 10,
     paddingHorizontal: 16,
   },
@@ -119,7 +128,7 @@ const styles = StyleSheet.create({
   },
   vereadorImagem: {
     width: '100%',
-    height: 200,
+    height: 120,
     borderRadius: 5,
     marginBottom: 5,
   },
@@ -131,7 +140,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   voltarButton: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#00A3D9',
     borderRadius: 5,
     padding: 15,
     alignItems: 'center',

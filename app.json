@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "canal",
-    "slug": "canal",
-    "version": "1.0.0",
+    "name": "canal_mirante",
+    "slug": "canalmirante",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -10,14 +10,15 @@
     "newArchEnabled": true,
     "sdkVersion": "52.0.0",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ebsbalbino.canalmirante"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ebsbalbino.canal"
+      "package": "com.ebsbalbino.canal_mirante"
     },
     "web": {
       "bundler": "metro",
@@ -46,7 +47,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "e7c8b0a2-620c-4eab-a32f-1af5c1528bb7"
+        "projectId": "984190c2-f5d0-4640-aaaf-345c95f9251a"
       }
     }
   }

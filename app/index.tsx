@@ -1,13 +1,89 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ImageBackground, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ImageBackground, Alert, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { Link, router } from 'expo-router';
-import { supabase } from '@/lib/supabase'; // Importe o cliente Supabase
+import { supabase } from '../lib/supabase'; // Importe o cliente Supabase
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Verificar se o usuário deve permanecer logado ao carregar o componente
+  useEffect(() => {
+    checkUserSession();
+  }, []);
+
+  const checkUserSession = async () => {
+    try {
+      setIsCheckingSession(true);
+      
+      // Verificar preferência de manter logado primeiro
+      const shouldKeepLoggedIn = await AsyncStorage.getItem('keepLoggedIn');
+      console.log('Keep logged in preference:', shouldKeepLoggedIn);
+      
+      // Se o usuário não escolheu manter logado, não fazer nada
+      if (shouldKeepLoggedIn !== 'true') {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      // Verificar se há uma sessão ativa no Supabase
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Erro ao verificar sessão:', error);
+        // Se houver erro, limpar a preferência
+        await AsyncStorage.removeItem('keepLoggedIn');
+        setIsCheckingSession(false);
+        return;
+      }
+
+      console.log('Sessão encontrada:', !!session);
+      console.log('User data:', session?.user?.email);
+
+      if (session && session.user) {
+        // Verificar se a sessão ainda é válida (não expirou)
+        const now = Math.round(Date.now() / 1000);
+        const expiresAt = session.expires_at || 0;
+        
+        console.log('Session expires at:', new Date(expiresAt * 1000));
+        console.log('Current time:', new Date(now * 1000));
+        console.log('Session is valid:', expiresAt > now);
+        
+        if (expiresAt > now) {
+          // Sessão válida, navegar para home
+          console.log('Redirecionando para home...');
+          router.replace('/home');
+        } else {
+          // Sessão expirada, limpar dados
+          console.log('Sessão expirada, fazendo logout...');
+          await handleSessionExpired();
+        }
+      } else {
+        // Não há sessão, limpar preferência
+        await AsyncStorage.removeItem('keepLoggedIn');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar sessão:', error);
+    } finally {
+      setIsCheckingSession(false);
+    }
+  };
+
+  // Função para lidar com sessão expirada
+  const handleSessionExpired = async () => {
+    try {
+      await supabase.auth.signOut();
+      await AsyncStorage.removeItem('keepLoggedIn');
+    } catch (error) {
+      console.error('Erro ao limpar sessão expirada:', error);
+    }
+  };
 
   // Função para lidar com o login
   const handleLogin = async () => {
@@ -30,7 +106,24 @@ export default function LoginScreen() {
         return;
       }
 
-      if (data?.user) {
+      if (data?.user && data?.session) {
+        console.log('Login realizado com sucesso');
+        console.log('User:', data.user.email);
+        console.log('Session expires at:', new Date((data.session.expires_at || 0) * 1000));
+        
+        // Salvar preferência de manter logado APENAS se o checkbox estiver marcado
+        try {
+          if (keepLoggedIn) {
+            await AsyncStorage.setItem('keepLoggedIn', 'true');
+            console.log('Usuário será mantido logado');
+          } else {
+            await AsyncStorage.removeItem('keepLoggedIn');
+            console.log('Usuário NÃO será mantido logado');
+          }
+        } catch (storageError) {
+          console.error('Erro ao salvar preferência:', storageError);
+        }
+        
         // Login bem-sucedido, navegar para a home
         router.replace('/home');
       }
@@ -71,9 +164,26 @@ export default function LoginScreen() {
     }
   };
 
+  // Mostrar loading enquanto verifica a sessão
+  if (isCheckingSession) {
+    return (
+      <ImageBackground 
+        source={require('@/assets/images/mirante.png')}
+        style={styles.backgroundImage}
+      >
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#00A3D9" />
+            <Text style={styles.loadingText}>Verificando sessão...</Text>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    );
+  }
+
   return (
     <ImageBackground 
-      source={require('@/assets/images/salto.png')}
+      source={require('@/assets/images/mirante.png')}
       style={styles.backgroundImage}
     >
       <SafeAreaView style={styles.container}>
@@ -90,7 +200,7 @@ export default function LoginScreen() {
             />
             
             <Text style={styles.subtitle}>
-              O aplicativo de conexão direta entre cidadão e prefeitura.
+              O aplicativo de conexão direta entre cidadão e câmara municipal.
             </Text>
           </View>
 
@@ -107,14 +217,36 @@ export default function LoginScreen() {
             />
 
             <Text style={styles.label}>Senha:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="**********"
-              value={senha}
-              onChangeText={setSenha}
-              secureTextEntry
-              editable={!loading}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="**********"
+                value={senha}
+                onChangeText={setSenha}
+                secureTextEntry={!showPassword}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+                disabled={loading}
+              >
+                <Text style={styles.eyeIcon}>
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.checkboxContainer}
+              onPress={() => setKeepLoggedIn(!keepLoggedIn)}
+              disabled={loading}
+            >
+              <View style={[styles.checkbox, keepLoggedIn && styles.checkboxChecked]}>
+                {keepLoggedIn && <Text style={styles.checkboxIcon}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Manter-me conectado</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity onPress={handleForgotPassword} disabled={loading}>
               <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
@@ -133,8 +265,21 @@ export default function LoginScreen() {
                 <Text style={styles.registerText}>Criar uma nova conta</Text>
               </Link>
             </TouchableOpacity>
+
+            <Image
+              source={require('@/assets/images/zion_logo.png')}
+              style={styles.zionLogo}
+              resizeMode="contain"
+            />
           </View>
         </KeyboardAvoidingView>
+
+        {/* Overlay de loading */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#00A3D9" />
+          </View>
+        )}
       </SafeAreaView>
     </ImageBackground>
   );
@@ -148,12 +293,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // Semi-transparente para melhor visibilidade do conteúdo
+    backgroundColor: 'rgba(255, 255, 255, 0.66)', // Semi-transparente para melhor visibilidade do conteúdo
   },
   keyboardView: {
     flex: 1,
-    justifyContent: 'center',
     padding: 20,
+    paddingTop: 120,
   },
   logoContainer: {
     alignItems: 'center',
@@ -196,6 +341,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 15,
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+  },
+  eyeButton: {
+    padding: 12,
+    paddingHorizontal: 15,
+  },
+  eyeIcon: {
+    fontSize: 18,
+    color: '#666',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#00A3D9',
+    borderRadius: 3,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  checkboxChecked: {
+    backgroundColor: '#00A3D9',
+  },
+  checkboxIcon: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333',
+  },
   forgotPassword: {
     color: '#4A4A9A',
     textAlign: 'left',
@@ -222,5 +417,32 @@ const styles = StyleSheet.create({
   registerText: {
     color: '#4A4A9A',
     fontSize: 16,
+  },
+  zionLogo: {
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#00A3D9',
   },
 });

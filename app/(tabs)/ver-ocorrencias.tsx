@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { supabase } from '../../lib/supabase';
 
 interface Ocorrencia {
+  replica: string;
   created_at: string;  // Usando created_at como identificador único
   titulo?: string;
   status?: string;
@@ -126,7 +127,7 @@ export default function VerOcorrenciasScreen() {
       console.log('Buscando ocorrências para o usuário:', userId);
       const { data, error } = await supabase
         .from('ocorrencias')
-        .select('created_at, status, titulo')
+        .select('created_at, status, titulo, replica')
         .eq('user_id', userId) // Filtra apenas ocorrências do usuário logado
         .order('created_at', { ascending: false });
 
@@ -140,7 +141,7 @@ export default function VerOcorrenciasScreen() {
         console.log('Verificando se existem ocorrências sem filtro...');
         const { data: allData, error: allError } = await supabase
           .from('ocorrencias')
-          .select('created_at, user_id, titulo')
+          .select('created_at, user_id, titulo, replica')
           .limit(5);
           
         if (!allError && allData) {
@@ -153,8 +154,7 @@ export default function VerOcorrenciasScreen() {
     } finally {
       setLoading(false);
     }
-  }
-  
+  }  
   async function fetchOcorrenciaDetalhes(created_at: string) {
     try {
       setDetalhesLoading(true);
@@ -187,6 +187,24 @@ export default function VerOcorrenciasScreen() {
     }
   };
 
+  // Função para obter a cor do status
+  const getStatusColor = (status?: string) => {
+    if (!status) return '#f2f3f5';
+    
+    switch (status.toLowerCase()) {
+      case 'enviado':
+        return '#f2f3f5';
+      case 'recebida':
+        return '#fef3c7';
+      case 'em análise':
+        return '#f79c5a';
+      case 'finalizada':
+        return '#d1fae5';
+      default:
+        return '#f2f3f5';
+    }
+  };
+
   const renderOcorrencia = ({ item }: { item: Ocorrencia }) => (
     <View style={styles.ocorrenciaItem}>
       <View style={styles.ocorrenciaInfo}>
@@ -195,7 +213,9 @@ export default function VerOcorrenciasScreen() {
         </Text>
 
         <Text style={styles.ocorrenciaStatus}>
-          Status: {item.status || 'Sem status'}
+          Status: <Text style={[styles.statusText, { backgroundColor: getStatusColor(item.status) }]}>
+            {item.status || 'Sem status'}
+          </Text>
         </Text>
       </View>
       <TouchableOpacity 
@@ -231,13 +251,14 @@ export default function VerOcorrenciasScreen() {
 
   return (
     <ImageBackground 
-      source={require('@/assets/images/salto.png')}
+      source={require('@/assets/images/mirante.png')}
       style={styles.backgroundImage}
     >
       <SafeAreaView style={styles.container}>
         <StatusBar style="auto" />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Minhas Ocorrências</Text>
+        <Text style={styles.headerTitle}>Minhas Ocorrências</Text>
+        <Text style={styles.subtitle}>Aqui você consulta o status das suas ocorrências. </Text>
         </View>
         
         <View style={styles.content}>
@@ -287,7 +308,11 @@ export default function VerOcorrenciasScreen() {
                   <Text style={styles.detalhesValue}>{selectedOcorrencia.titulo || 'Sem título'}</Text>
                   
                   <Text style={styles.detalhesLabel}>Status:</Text>
-                  <Text style={styles.detalhesValue}>{selectedOcorrencia.status || 'Sem status'}</Text>
+                  <Text style={styles.detalhesValue}>
+                    <Text style={[styles.statusText, { backgroundColor: getStatusColor(selectedOcorrencia.status) }]}>
+                      {selectedOcorrencia.status || 'Sem status'}
+                    </Text>
+                  </Text>
                   
                   <Text style={styles.detalhesLabel}>Endereço:</Text>
                   <Text style={styles.detalhesValue}>{selectedOcorrencia.endereco || 'Não informado'}</Text>
@@ -339,21 +364,29 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.51)',
   },
   header: {
     padding: 20,
     paddingBottom: 10,
   },
   headerTitle: {
+    textAlign: 'center',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#00A3D9',
+    color: '#0e2356',
+    marginTop: 30,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   content: {
     flex: 1,
     padding: 20,
-    paddingTop: 0,
+    paddingTop: 30,
   },
   listContent: {
     paddingBottom: 20,
@@ -380,10 +413,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    
   },
   ocorrenciaStatus: {
     fontSize: 14,
     color: '#555',
+  },
+  statusText: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontWeight: '500',
   },
   detalhesButton: {
     backgroundColor: '#00A3D9',
