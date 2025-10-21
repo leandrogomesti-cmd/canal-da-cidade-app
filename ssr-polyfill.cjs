@@ -1,18 +1,25 @@
 // ssr-polyfill.cjs
-// Evita que libs do client quebrem durante o "static rendering" no Node.
+(function () {
+  // cria window no ambiente Node (SSR)
+  if (typeof global.window === 'undefined') {
+    global.window = {};
+  }
 
-if (typeof global.localStorage === 'undefined') {
-  global.localStorage = {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-    clear: () => {},
-    key: () => null,
-    get length() { return 0; },
-  };
-}
+  // polyfill simples de localStorage
+  const makeLocalStorage = () => ({
+    _data: new Map(),
+    getItem(key) { return this._data.has(key) ? this._data.get(key) : null; },
+    setItem(key, value) { this._data.set(String(key), String(value)); },
+    removeItem(key) { this._data.delete(String(key)); },
+    clear() { this._data.clear(); },
+    key(i) { return Array.from(this._data.keys())[i] ?? null; },
+    get length() { return this._data.size; },
+  });
 
-if (typeof global.window === 'undefined') {
-  // Não criamos um objeto window completo de propósito; só evitamos reference error
-  global.window = undefined;
-}
+  if (typeof global.localStorage === 'undefined') {
+    global.localStorage = makeLocalStorage();
+  }
+  if (typeof global.window.localStorage === 'undefined') {
+    global.window.localStorage = global.localStorage;
+  }
+})();
